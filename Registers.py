@@ -1,4 +1,4 @@
-class Registers(dict):
+class Registers:
     r0 = 0
     r1 = 0
     r2 = 0
@@ -9,6 +9,7 @@ class Registers(dict):
     r7 = 0
     r8 = 0
     r9 = 0
+    
     sl = 0
     fp = 0
     ip = 0
