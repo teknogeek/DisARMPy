@@ -30,7 +30,7 @@ class DisARMPy:
             self.registers.pc += 4
             print('0x{:08x}\t\t{:<10}\t{:<40}\t{:<50}'.format(i.address, instruction, options, ilEquiv))
             
-            if idx == 10:
+            if idx == 30:
                 break
                 
                 
@@ -57,12 +57,14 @@ class DisARMPy:
                 offsetList = map(str, offset.split(', '))
                 
                 value = self.calculateRegisterSum(offsetList)
-                dest = options.replace(offset, '').replace(', []', '')
+                dest = options.replace(', [{}]'.format(offset), '')
                 
                 pointer = True
             else:
-                dest = options.split(', ')[0]
-                value = getattr(self.registers, options)
+                args = options.split(', ')
+                
+                dest = args[0]
+                value = getattr(self.registers, args[1])
                 
             setattr(self.registers, dest, value)
 
@@ -72,7 +74,28 @@ class DisARMPy:
                 
             return '{} = {}'.format(dest, value)
         
-        elif instruction == 'add' or instruction == 'sub':
+        elif instruction == 'str':
+            # check for immediate offset, e.g. str r0, [sp, #0x14]
+            offset = re.findall('\[([^\]]+)\]', options)
+            
+            if len(offset) > 0:
+                # handle just the offset
+                offsetArg = str(offset[0])
+                offsetList = offsetArg.split(', ')
+                
+                offset = ''
+                baseAddr = offsetList[0]
+                if len(offsetList) > 1:
+                    offset = ' + {}'.format(int(offsetList[1].replace('#', ''), 0))
+                    
+                dest = '{}{}'.format(baseAddr, offset)
+                value = options.replace(offsetArg, '').replace(', []', '')
+            else:
+                value, dest = options.split(', ')
+                
+            return '*({}) = {}'.format(dest, value)
+        
+        elif instruction in ['add', 'sub']:
             if instruction == 'sub':
                 options = options.replace('#', '#-')
             
@@ -102,5 +125,9 @@ class DisARMPy:
 
         elif instruction == 'b':
             return 'goto 0x{:x}'.format(self.calculateRegisterSum([options]))
+        
+        elif instruction == 'push':
+            # TODO: write push instruction
+            return ''
 
         return 'PSUEDO CODE HERE'
